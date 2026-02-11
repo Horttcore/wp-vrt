@@ -1,0 +1,24 @@
+{
+    "name": "wp-vrt/wp-vrt",
+    "description": "WP VRT testing support",
+    "version": "0.1.0",
+    "type": "wordpress-plugin",
+    "require": {},
+    "require-dev": {
+        "pestphp/pest": "^4.0",
+        "symfony/process": "^7.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "autoload": {
+        "classmap": [
+            "includes/"
+        ]
+    },
+    "scripts": {
+        "test": "pest"
+    }
+}

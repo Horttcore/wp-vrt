@@ -1,0 +1,11 @@
+{
+    "name": "wp-vrt",
+    "private": true,
+    "devDependencies": {
+        "@wordpress/scripts": "^30.0.0"
+    },
+    "scripts": {
+        "build": "wp-scripts build src/admin-page.js --output-path build",
+        "start": "wp-scripts start src/admin-page.js --output-path build"
+    }
+}
