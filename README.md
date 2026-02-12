@@ -118,6 +118,29 @@ add_filter('wp_vrt_block_denylist', function () {
 });
 ```
 
+## Enable/Disable Exposed Items
+
+You can disable items from being exposed by default. Disabled items are hidden unless you enable the flag.
+
+```php
+add_filter('wp_vrt_is_item_enabled', function ($enabled, $type, $id, $item) {
+    if ($type === 'block' && $id === 'core/paragraph') {
+        return false;
+    }
+    return $enabled;
+}, 10, 4);
+
+add_filter('wp_vrt_template_part_enabled', function ($enabled, $template) {
+    return $template->slug !== 'header';
+}, 10, 2);
+```
+
+Show disabled items:
+- Admin UI: toggle on `Tools → WP VRT`
+- Discovery: `/wp-json/wp-vrt/v1/discover?include_disabled=1`
+
+To toggle items from the UI, use the disable/enable icon on each row.
+
 ## Block Families
 
 The admin UI groups blocks that are commonly used together. You can add or override families:

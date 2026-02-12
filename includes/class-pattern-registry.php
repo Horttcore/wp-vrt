@@ -16,7 +16,7 @@ class PatternRegistry {
         return (string) $pattern['content'];
     }
 
-    public function get_discoverable_patterns(): array {
+    public function get_discoverable_patterns(bool $include_disabled = false): array {
         $patterns = [];
         if (!class_exists('WP_Block_Patterns_Registry')) {
             return $patterns;
@@ -28,16 +28,21 @@ class PatternRegistry {
                 continue;
             }
             $content = (string) ($pattern['content'] ?? '');
+            $enabled = $this->is_pattern_enabled($pattern);
+            if (!$enabled && !$include_disabled) {
+                continue;
+            }
             $patterns[] = [
                 'name' => $pattern['name'],
                 'title' => $pattern['title'] ?? $pattern['name'],
                 'slug' => $this->pattern_name_to_slug($pattern['name']),
                 'categories' => $pattern['categories'] ?? [],
                 'is_dynamic' => $content !== '' ? $this->is_dynamic_content($content) : false,
+                'disabled' => !$enabled,
             ];
         }
 
-        return apply_filters('wp_vrt_discoverable_patterns', $patterns);
+        return \apply_filters('wp_vrt_discoverable_patterns', $patterns);
     }
 
     private function get_pattern_by_slug(string $slug): ?array {
@@ -85,5 +90,12 @@ class PatternRegistry {
         ];
 
         return DynamicContext::content_has_dynamic_blocks($content);
+    }
+
+    private function is_pattern_enabled(array $pattern): bool {
+        $enabled = true;
+        $enabled = \apply_filters('wp_vrt_is_item_enabled', $enabled, 'pattern', $pattern['name'] ?? '', $pattern);
+        $enabled = \apply_filters('wp_vrt_pattern_enabled', $enabled, $pattern);
+        return (bool) $enabled;
     }
 }

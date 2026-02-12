@@ -2,6 +2,7 @@
     "name": "wp-vrt",
     "private": true,
     "devDependencies": {
+        "@wordpress/views": "^1.2.0",
         "@wordpress/scripts": "^30.0.0"
     },
     "scripts": {

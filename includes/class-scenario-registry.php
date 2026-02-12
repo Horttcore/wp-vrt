@@ -7,19 +7,24 @@ if (!defined('ABSPATH')) {
 }
 
 class ScenarioRegistry {
-    public function get_discoverable_scenarios(): array {
+    public function get_discoverable_scenarios(bool $include_disabled = false): array {
         $scenarios = $this->get_scenarios();
         $items = [];
 
         foreach ($scenarios as $slug => $scenario) {
+            $enabled = $this->is_scenario_enabled($slug, $scenario);
+            if (!$enabled && !$include_disabled) {
+                continue;
+            }
             $items[] = [
                 'slug' => $slug,
                 'title' => $scenario['title'] ?? $slug,
                 'description' => $scenario['description'] ?? null,
+                'disabled' => !$enabled,
             ];
         }
 
-        return apply_filters('wp_vrt_discoverable_scenarios', $items);
+        return \apply_filters('wp_vrt_discoverable_scenarios', $items);
     }
 
     public function get_scenario_content(string $slug): ?string {
@@ -37,7 +42,7 @@ class ScenarioRegistry {
     }
 
     private function get_scenarios(): array {
-        $scenarios = apply_filters('wp_vrt_register_scenarios', []);
+        $scenarios = \apply_filters('wp_vrt_register_scenarios', []);
         if (!is_array($scenarios)) {
             return [];
         }
@@ -49,5 +54,12 @@ class ScenarioRegistry {
         }
 
         return $scenarios;
+    }
+
+    private function is_scenario_enabled(string $slug, array $scenario): bool {
+        $enabled = true;
+        $enabled = \apply_filters('wp_vrt_is_item_enabled', $enabled, 'scenario', $slug, $scenario);
+        $enabled = \apply_filters('wp_vrt_scenario_enabled', $enabled, $slug, $scenario);
+        return (bool) $enabled;
     }
 }

@@ -20,7 +20,9 @@ class DiscoveryApi {
     }
 
     public static function handle_discover(): \WP_REST_Response {
-        $blocks = (new BlockRegistry())->get_discoverable_blocks();
+        $include_disabled = isset($_GET['include_disabled']) && $_GET['include_disabled'] !== '0';
+
+        $blocks = (new BlockRegistry())->get_discoverable_blocks($include_disabled);
         $items = [
             'blocks' => [],
             'patterns' => [],
@@ -35,6 +37,7 @@ class DiscoveryApi {
                 'title' => $block['title'],
                 'url' => '/wp-vrt/block/' . $block['slug'],
                 'variations' => [],
+                'disabled' => $block['disabled'] ?? false,
             ];
 
             foreach ($block['variations'] as $variation) {
@@ -48,42 +51,49 @@ class DiscoveryApi {
             $items['blocks'][] = $block_item;
         }
 
-        $patterns = (new PatternRegistry())->get_discoverable_patterns();
+        $patterns = (new PatternRegistry())->get_discoverable_patterns($include_disabled);
         foreach ($patterns as $pattern) {
             $items['patterns'][] = [
                 'name' => $pattern['name'],
                 'title' => $pattern['title'],
                 'url' => '/wp-vrt/pattern/' . $pattern['slug'],
                 'categories' => $pattern['categories'],
+                'disabled' => $pattern['disabled'] ?? false,
+                'is_dynamic' => $pattern['is_dynamic'] ?? false,
             ];
         }
 
-        $templates = (new TemplateRegistry())->get_discoverable_templates();
+        $templates = (new TemplateRegistry())->get_discoverable_templates($include_disabled);
         foreach ($templates as $template) {
             $items['templates'][] = [
                 'slug' => $template['slug'],
                 'title' => $template['title'],
                 'url' => '/wp-vrt/template/' . $template['slug'],
+                'disabled' => $template['disabled'] ?? false,
+                'is_dynamic' => $template['is_dynamic'] ?? false,
             ];
         }
 
-        $template_parts = (new TemplateRegistry())->get_discoverable_template_parts();
+        $template_parts = (new TemplateRegistry())->get_discoverable_template_parts($include_disabled);
         foreach ($template_parts as $part) {
             $items['template_parts'][] = [
                 'slug' => $part['slug'],
                 'title' => $part['title'],
                 'area' => $part['area'],
                 'url' => '/wp-vrt/template-part/' . $part['slug'],
+                'disabled' => $part['disabled'] ?? false,
+                'is_dynamic' => $part['is_dynamic'] ?? false,
             ];
         }
 
-        $scenarios = (new ScenarioRegistry())->get_discoverable_scenarios();
+        $scenarios = (new ScenarioRegistry())->get_discoverable_scenarios($include_disabled);
         foreach ($scenarios as $scenario) {
             $items['scenarios'][] = [
                 'slug' => $scenario['slug'],
                 'title' => $scenario['title'],
                 'description' => $scenario['description'],
                 'url' => '/wp-vrt/scenario/' . $scenario['slug'],
+                'disabled' => $scenario['disabled'] ?? false,
             ];
         }
 

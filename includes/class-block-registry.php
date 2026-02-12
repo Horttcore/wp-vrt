@@ -23,11 +23,16 @@ class BlockRegistry {
         return $markup !== '' ? $markup : null;
     }
 
-    public function get_discoverable_blocks(): array {
+    public function get_discoverable_blocks(bool $include_disabled = false): array {
         $blocks = [];
         $registry = \WP_Block_Type_Registry::get_instance();
         foreach ($registry->get_all_registered() as $block_name => $block_type) {
             if (!$this->is_supported_block($block_name)) {
+                continue;
+            }
+
+            $enabled = $this->is_block_enabled($block_name, $block_type);
+            if (!$enabled && !$include_disabled) {
                 continue;
             }
             $blocks[$block_name] = [
@@ -35,6 +40,7 @@ class BlockRegistry {
                 'title' => $block_type->title ?? $block_name,
                 'slug' => $this->block_name_to_slug($block_name),
                 'variations' => $this->get_block_variations($block_name),
+                'disabled' => !$enabled,
             ];
         }
 
@@ -110,6 +116,13 @@ class BlockRegistry {
         }
 
         return true;
+    }
+
+    private function is_block_enabled(string $block_name, $block_type): bool {
+        $enabled = true;
+        $enabled = \apply_filters('wp_vrt_is_item_enabled', $enabled, 'block', $block_name, $block_type);
+        $enabled = \apply_filters('wp_vrt_block_enabled', $enabled, $block_name, $block_type);
+        return (bool) $enabled;
     }
 
     private function get_default_families(): array {
