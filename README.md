@@ -124,7 +124,7 @@ By default, WP VRT excludes the following blocks from discovery:
 
 | Block | Reason |
 | --- | --- |
-| `core/social-link-*` (39 variants) | Consolidated into single `core/social-links` block with all 43 social platforms as children |
+| `core/social-link-*` (39 variants) | Consolidated into single `core/social-links` block with all 39 social platforms as children |
 | `core/template-part` | Cannot be meaningfully previewed without template context |
 | `core/pattern` | Cannot be meaningfully previewed without theme context |
 | `core/widget-group` | Requires legacy widget context |
@@ -211,24 +211,9 @@ wp vrt test --base-url="http://bedrock.test"
 
 ## Dynamic Content
 
-Patterns and templates with dynamic blocks (query, post content, etc.) are excluded by default.
-Opt in using:
+Dynamic blocks that require post context (like query, post content, comments, etc.) are supported by providing a post context for rendering.
 
-```php
-add_filter('wp_vrt_allow_dynamic_content', function ($allow, $type, $slug, $content) {
-    return true;
-}, 10, 4);
-```
-
-To enable dynamic rendering globally (and provide a post context), use:
-
-```php
-add_filter('wp_vrt_enable_dynamic_rendering', function () {
-    return true;
-});
-```
-
-You can also provide a specific post ID for context:
+To provide a specific post ID for context:
 
 ```php
 add_filter('wp_vrt_dynamic_post_id', function () {
@@ -236,4 +221,6 @@ add_filter('wp_vrt_dynamic_post_id', function () {
 });
 ```
 
-If no posts exist, WP VRT creates a temporary draft and deletes it after render.
+If no post ID is provided, WP VRT automatically:
+1. Uses the first published post if one exists
+2. Creates a temporary draft post and deletes it after rendering if no posts exist
