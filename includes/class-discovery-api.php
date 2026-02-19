@@ -53,6 +53,19 @@ class DiscoveryApi {
 
         $patterns = (new PatternRegistry())->get_discoverable_patterns($include_disabled);
         foreach ($patterns as $pattern) {
+            $categories = $pattern['categories'] ?? [];
+            $is_vrt = is_array($categories) && in_array(PatternRegistry::VRT_CATEGORY, $categories, true);
+            if ($is_vrt) {
+                $items['scenarios'][] = [
+                    'slug' => $pattern['slug'],
+                    'title' => $pattern['title'],
+                    'description' => '',
+                    'url' => '/wp-vrt/pattern/' . $pattern['slug'],
+                    'disabled' => $pattern['disabled'] ?? false,
+                ];
+                continue;
+            }
+
             $items['patterns'][] = [
                 'name' => $pattern['name'],
                 'title' => $pattern['title'],

@@ -37,6 +37,7 @@ spl_autoload_register(static function (string $class): void {
         'WpVrt\\DynamicContext' => 'class-dynamic-context.php',
         'WpVrt\\AdminPage' => 'class-admin-page.php',
         'WpVrt\\Cli' => 'class-cli.php',
+        'WpVrt\\RestPatternFilters' => 'class-rest-pattern-filters.php',
     ];
 
     if (!isset($map[$class])) {
@@ -65,8 +66,60 @@ add_action('plugins_loaded', static function () {
     WpVrt\VirtualPages::init();
     WpVrt\DiscoveryApi::init();
     WpVrt\AdminPage::init();
+    WpVrt\RestPatternFilters::init();
 
     if (defined('WP_CLI') && WP_CLI) {
         WpVrt\Cli::init();
     }
+});
+
+// Remove blocks that cannot be meaningfully previewed in isolation
+add_filter('wp_vrt_block_denylist', static function (array $denylist): array {
+    $social_links_variants = [
+        'core/social-link-amazon',
+        'core/social-link-bandcamp',
+        'core/social-link-behance',
+        'core/social-link-chain',
+        'core/social-link-codepen',
+        'core/social-link-deviantart',
+        'core/social-link-dribbble',
+        'core/social-link-dropbox',
+        'core/social-link-etsy',
+        'core/social-link-facebook',
+        'core/social-link-feed',
+        'core/social-link-fivehundredpx',
+        'core/social-link-flickr',
+        'core/social-link-foursquare',
+        'core/social-link-goodreads',
+        'core/social-link-google',
+        'core/social-link-github',
+        'core/social-link-instagram',
+        'core/social-link-lastfm',
+        'core/social-link-linkedin',
+        'core/social-link-mail',
+        'core/social-link-mastodon',
+        'core/social-link-meetup',
+        'core/social-link-medium',
+        'core/social-link-pinterest',
+        'core/social-link-pocket',
+        'core/social-link-reddit',
+        'core/social-link-skype',
+        'core/social-link-snapchat',
+        'core/social-link-soundcloud',
+        'core/social-link-spotify',
+        'core/social-link-tumblr',
+        'core/social-link-twitch',
+        'core/social-link-twitter',
+        'core/social-link-vimeo',
+        'core/social-link-vk',
+        'core/social-link-wordpress',
+        'core/social-link-yelp',
+        'core/social-link-youtube',
+    ];
+
+    return array_merge($denylist, array_merge($social_links_variants, [
+        'core/template-part',  // Template parts are reusable components, not meant for block preview
+        'core/pattern',        // Pattern placeholder blocks are metadata, not visual content
+        'core/widget-group',   // Widget groups are sidebar/widget area specific
+    ]));
 });

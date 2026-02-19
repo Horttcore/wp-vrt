@@ -62,6 +62,14 @@ class VirtualPages {
         if ($content === null) {
             wp_die('VRT item not found', 'Not Found', ['response' => 404]);
         }
+        
+        // DEBUG: Log what content is loaded
+        if (function_exists('error_log')) {
+            error_log('[WPVRT_DEBUG] Content for ' . $type . '/' . $slug . ': ' . strlen($content ?? '') . ' bytes');
+            if (strlen($content ?? '') < 500) {
+                error_log('[WPVRT_DEBUG] Content: ' . var_export($content, true));
+            }
+        }
 
         $dynamic_context = null;
         if (DynamicContext::content_has_dynamic_blocks($content)) {

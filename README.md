@@ -118,6 +118,19 @@ add_filter('wp_vrt_block_denylist', function () {
 });
 ```
 
+### Excluded Blocks
+
+By default, WP VRT excludes the following blocks from discovery:
+
+| Block | Reason |
+| --- | --- |
+| `core/social-link-*` (39 variants) | Consolidated into single `core/social-links` block with all 43 social platforms as children |
+| `core/template-part` | Cannot be meaningfully previewed without template context |
+| `core/pattern` | Cannot be meaningfully previewed without theme context |
+| `core/widget-group` | Requires legacy widget context |
+
+This results in 87 discoverable blocks instead of 129, with all blocks having meaningful sample content.
+
 ## Enable/Disable Exposed Items
 
 You can disable items from being exposed by default. Disabled items are hidden unless you enable the flag.

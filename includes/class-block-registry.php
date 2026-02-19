@@ -20,6 +20,7 @@ class BlockRegistry {
         }
 
         $markup = $this->sample_content->generate_block_markup($block_name, $variation);
+        
         return $markup !== '' ? $markup : null;
     }
 
@@ -27,7 +28,14 @@ class BlockRegistry {
         $blocks = [];
         $registry = \WP_Block_Type_Registry::get_instance();
         foreach ($registry->get_all_registered() as $block_name => $block_type) {
+            if (!is_string($block_name) || $block_name === '') {
+                continue;
+            }
             if (!$this->is_supported_block($block_name)) {
+                continue;
+            }
+
+            if (!empty($block_type->parent) && is_array($block_type->parent)) {
                 continue;
             }
 
@@ -37,7 +45,7 @@ class BlockRegistry {
             }
             $blocks[$block_name] = [
                 'name' => $block_name,
-                'title' => $block_type->title ?? $block_name,
+                'title' => !empty($block_type->title) ? $block_type->title : $block_name,
                 'slug' => $this->block_name_to_slug($block_name),
                 'variations' => $this->get_block_variations($block_name),
                 'disabled' => !$enabled,
@@ -53,6 +61,9 @@ class BlockRegistry {
 
         $registry = \WP_Block_Type_Registry::get_instance();
         foreach ($registry->get_all_registered() as $block_name => $block_type) {
+            if (!is_string($block_name) || $block_name === '') {
+                continue;
+            }
             if (!$this->is_supported_block($block_name)) {
                 continue;
             }
@@ -65,6 +76,37 @@ class BlockRegistry {
         }
 
         return $this->normalize_families($families);
+    }
+
+    public function get_block_categories(): array {
+        $categories = [];
+        $registry = \WP_Block_Type_Registry::get_instance();
+
+        foreach ($registry->get_all_registered() as $block_name => $block_type) {
+            if (!is_string($block_name) || $block_name === '') {
+                continue;
+            }
+            if (!$this->is_supported_block($block_name)) {
+                continue;
+            }
+
+            $category = $block_type->category ?? 'uncategorized';
+            $category = is_string($category) && $category !== '' ? $category : 'uncategorized';
+
+            if (!isset($categories[$category])) {
+                $categories[$category] = [
+                    'slug' => $category,
+                    'title' => $this->get_category_label($category),
+                    'description' => '',
+                    'blocks' => [],
+                ];
+            }
+
+            $categories[$category]['blocks'][] = $block_name;
+        }
+
+        $ordered = $this->sort_categories($categories);
+        return array_values($ordered);
     }
 
     private function get_block_name_from_slug(string $slug): ?string {
@@ -193,5 +235,45 @@ class BlockRegistry {
         }
 
         return $normalized;
+    }
+
+    private function get_category_label(string $slug): string {
+        $labels = [
+            'text' => 'Text',
+            'media' => 'Media',
+            'design' => 'Design',
+            'widgets' => 'Widgets',
+            'theme' => 'Theme',
+            'embed' => 'Embeds',
+            'reusable' => 'Reusable',
+            'uncategorized' => 'Uncategorized',
+        ];
+
+        if (isset($labels[$slug])) {
+            return $labels[$slug];
+        }
+
+        return ucwords(str_replace(['-', '_'], ' ', $slug));
+    }
+
+    private function sort_categories(array $categories): array {
+        $order = ['text', 'media', 'design', 'widgets', 'theme', 'embed', 'reusable', 'uncategorized'];
+        $ordered = [];
+
+        foreach ($order as $slug) {
+            if (isset($categories[$slug])) {
+                $ordered[$slug] = $categories[$slug];
+                unset($categories[$slug]);
+            }
+        }
+
+        if (!empty($categories)) {
+            ksort($categories);
+            foreach ($categories as $slug => $category) {
+                $ordered[$slug] = $category;
+            }
+        }
+
+        return $ordered;
     }
 }

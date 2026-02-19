@@ -7,6 +7,8 @@ if (!defined('ABSPATH')) {
 }
 
 class PatternRegistry {
+    public const VRT_CATEGORY = 'visual-regression-testing';
+
     public function get_pattern_content(string $slug): ?string {
         $pattern = $this->get_pattern_by_slug($slug);
         if (!$pattern || empty($pattern['content'])) {
@@ -32,7 +34,7 @@ class PatternRegistry {
             if (!$enabled && !$include_disabled) {
                 continue;
             }
-            $patterns[] = [
+            $patterns[$pattern['name']] = [
                 'name' => $pattern['name'],
                 'title' => $pattern['title'] ?? $pattern['name'],
                 'slug' => $this->pattern_name_to_slug($pattern['name']),
@@ -42,7 +44,29 @@ class PatternRegistry {
             ];
         }
 
-        return \apply_filters('wp_vrt_discoverable_patterns', $patterns);
+        foreach ($this->get_stored_patterns() as $pattern) {
+            if (empty($pattern['name'])) {
+                continue;
+            }
+            if (isset($patterns[$pattern['name']])) {
+                continue;
+            }
+            $content = (string) ($pattern['content'] ?? '');
+            $enabled = $this->is_pattern_enabled($pattern);
+            if (!$enabled && !$include_disabled) {
+                continue;
+            }
+            $patterns[$pattern['name']] = [
+                'name' => $pattern['name'],
+                'title' => $pattern['title'] ?? $pattern['name'],
+                'slug' => $this->pattern_name_to_slug($pattern['name']),
+                'categories' => $pattern['categories'] ?? [],
+                'is_dynamic' => $content !== '' ? $this->is_dynamic_content($content) : false,
+                'disabled' => !$enabled,
+            ];
+        }
+
+        return \apply_filters('wp_vrt_discoverable_patterns', array_values($patterns));
     }
 
     private function get_pattern_by_slug(string $slug): ?array {
@@ -60,7 +84,65 @@ class PatternRegistry {
             }
         }
 
+        foreach ($this->get_stored_patterns() as $pattern) {
+            if (empty($pattern['name'])) {
+                continue;
+            }
+            if ($this->pattern_name_to_slug($pattern['name']) === $slug) {
+                return $pattern;
+            }
+        }
+
         return null;
+    }
+
+    private function get_stored_patterns(): array {
+        $post_types = [];
+        if (\post_type_exists('wp_block_pattern')) {
+            $post_types[] = 'wp_block_pattern';
+        }
+        if (\post_type_exists('wp_block')) {
+            $post_types[] = 'wp_block';
+        }
+
+        if (empty($post_types)) {
+            return [];
+        }
+
+        $posts = \get_posts([
+            'post_type' => $post_types,
+            'post_status' => ['publish', 'draft', 'private', 'pending', 'future'],
+            'numberposts' => -1,
+            'orderby' => 'title',
+            'order' => 'ASC',
+        ]);
+
+        $patterns = [];
+        foreach ($posts as $post) {
+            $post_name = $post->post_name;
+            if (!is_string($post_name) || $post_name === '') {
+                $post_name = 'pattern-' . $post->ID;
+            }
+
+            $categories = \wp_get_object_terms($post->ID, 'wp_pattern_category', ['fields' => 'slugs']);
+            if (\is_wp_error($categories)) {
+                $categories = [];
+            }
+
+            $should_include = $post->post_type === 'wp_block_pattern' || !empty($categories);
+            if (!$should_include) {
+                continue;
+            }
+
+            $patterns[] = [
+                'name' => 'user/' . $post_name,
+                'title' => $post->post_title !== '' ? $post->post_title : $post_name,
+                'content' => $post->post_content,
+                'categories' => is_array($categories) ? $categories : [],
+            ];
+        }
+
+        return $patterns;
     }
 
     private function pattern_name_to_slug(string $name): string {

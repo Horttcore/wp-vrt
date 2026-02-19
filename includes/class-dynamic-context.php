@@ -111,6 +111,7 @@ class DynamicContext {
             $registry = \WP_Block_Type_Registry::get_instance();
             $block_type = $registry->get_registered($block_name);
             if ($block_type) {
+                $has_render_callback = !empty($block_type->render_callback);
                 $dynamic = !empty($block_type->render_callback);
                 return (bool) \apply_filters('wp_vrt_is_dynamic_block', $dynamic, $block_name, $block_type);
             }

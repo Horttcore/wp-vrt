@@ -9,7 +9,9 @@ if (!defined('ABSPATH')) {
 class Renderer {
     public function render(string $type, string $slug, ?string $variation, string $content): string {
         $styles = (new StyleCollector())->collect_all_styles();
+        
         $rendered_content = do_blocks($content);
+        
         $head_output = $this->capture_wp_head();
         $footer_output = $this->capture_wp_footer();
 
