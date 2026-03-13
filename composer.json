@@ -1,5 +1,5 @@
 {
-    "name": "wp-vrt/wp-vrt",
+    "name": "ralfhortt/wp-vrt",
     "description": "WP VRT testing support",
     "version": "0.1.0",
     "type": "wordpress-plugin",
